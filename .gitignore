@@ -205,3 +205,7 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+#.csv to keep clinical data private. Note to Dhimant and Fateh--put our .csv in the ./data folder 
+# name it labs_and_biopsies.csv, and DO NOT let it get pushed EVER. I'm cereal >:(
+.csv
