@@ -209,3 +209,4 @@ __marimo__/
 #.csv to keep clinical data private. Note to Dhimant and Fateh--put our .csv in the ./data folder 
 # name it labs_and_biopsies.csv, and DO NOT let it get pushed EVER. I'm cereal >:(
 data/labs_and_biopsies.csv
+data/cleaned_data_floats.csv
