@@ -6,8 +6,11 @@ from sklearn.impute import IterativeImputer
 from sklearn.ensemble import RandomForestRegressor
 
 def build_clean_dataset(
-    input_path="../data/labs_and_biopsies.csv",
-    output_path="../data/final_cleaned.csv"
+    input_path: str = "../data/labs_and_biopsies.csv",
+    output_path: str = "../data/final_cleaned.csv",
+    unique_cols: list[str] | None = None,
+    unique_ordinals: list[str] | None = None,
+    unique_label: str | None = None
 ):
     
     df_raw = pd.read_csv(input_path, sep=",")
@@ -19,18 +22,21 @@ def build_clean_dataset(
         "Severe": "3"
     }, inplace=True)
 
-    muhcols = [
-        "Duo_Inflammation",
-        "Gastric_Inflammation",
-        "LeftColon_Inflammation",
-        "TI_Inflammation",
-        "PGA",
-        "Hematocrit",
-        "ESR",
-        "CRP",
-        "Albumin",
-        "Vitamin D"
-    ]
+    if unique_cols:
+        muhcols = unique_cols
+    else:
+        muhcols = [
+            "Duo_Inflammation",
+            "Gastric_Inflammation",
+            "LeftColon_Inflammation",
+            "TI_Inflammation",
+            "PGA",
+            "Hematocrit",
+            "ESR",
+            "CRP",
+            "Albumin",
+            "Vitamin D"
+        ]
 
     df = df_raw[muhcols].apply(pd.to_numeric, errors="coerce")
 
@@ -43,15 +49,21 @@ def build_clean_dataset(
     df_imputed = imputer.fit_transform(df)
     df_complete = pd.DataFrame(df_imputed, columns=muhcols)
 
-    df_complete["Diagnosis"] = df_raw["Diagnosis"]
+    if unique_label:
+        df_complete[unique_label] = df_raw[unique_label]
+    else:
+        df_complete["Diagnosis"] = df_raw["Diagnosis"]
 
-    categorical_cols = [
-        "Duo_Inflammation",
-        "Gastric_Inflammation",
-        "LeftColon_Inflammation",
-        "TI_Inflammation",
-        "PGA"
-    ]
+    if unique_ordinals:
+        categorical_cols = unique_ordinals
+    else:
+        categorical_cols = [
+            "Duo_Inflammation",
+            "Gastric_Inflammation",
+            "LeftColon_Inflammation",
+            "TI_Inflammation",
+            "PGA"
+        ]
 
     df_complete[categorical_cols] = df_complete[categorical_cols].round()
     df_complete[categorical_cols] = df_complete[categorical_cols].clip(0, 3)
