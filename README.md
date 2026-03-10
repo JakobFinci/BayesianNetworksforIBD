@@ -11,7 +11,7 @@ This repository contains code and analysis tools for studying the network struct
 The pipeline includes tools for dataset preprocessing (MissForest imputation, handling of left-censored laboratory values), network inference, graph centrality analysis, and visualization. The goal is to explore how systemic biomarkers connect to localized tissue inflammation and to identify which markers function as central bridges within the inferred clinical network.
 
 <p align="center">
-  <img src="https://github.com/JakobFinci/mandelbot/blob/main/images/network.jpg"/>
+  <img src="https://github.com/JakobFinci/BayesianNetworksforIBD/blob/main/images/network.jpg"/>
 </p>
 <p align="center">
     <em>Basic HillClimb Network for Full Cohort: Crohn's and UC</em>
