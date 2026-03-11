@@ -7,7 +7,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 
-from pgmpy.estimators import HillClimbSearch, BIC
+from pgmpy.estimators import HillClimbSearch, BIC, BDeu
 from igraph import Graph, plot
 
 from causallearn.search.ConstraintBased.PC import pc
@@ -40,11 +40,11 @@ class IBDNetworkResult:
     score_cd: Optional[float] = None
 
 def generate_ibd_network(
-        
-    method:str,
+    method: str,
     csv_path="../data/final_cleaned.csv",
-    drop_nodes=False, 
-    alpha=0.05
+    drop_nodes=False,
+    alpha=0.05,
+    bn_score="bic"
 ):
     """
     Unified network generation function.
@@ -52,7 +52,7 @@ def generate_ibd_network(
     Parameters
     ----------
     method : str
-        "bn" for discretize -> HillClimb -> BIC -> directed graph
+        "bn" for discretize -> HillClimb -> score-based BN -> directed graph
         "pc" for continuous+ordinal -> PC -> KCI -> partially directed graph
     csv_path : str
         Path to local CSV.
@@ -60,6 +60,9 @@ def generate_ibd_network(
         Columns to drop before fitting. Default False.
     alpha : float
         Significance threshold for PC algorithm.
+    bn_score : str
+        Scoring method for Bayesian network structure learning.
+        Supported: "bic", "bdeu"
 
     Returns
     -------
@@ -114,19 +117,30 @@ def generate_ibd_network(
         full_data = df_model.drop(columns=["Diagnosis"]).copy()
         cd_data = df_cd.drop(columns=["Diagnosis"]).copy()
 
+        bn_score = bn_score.lower()
+
+        if bn_score == "bic":
+            scorer_full = BIC(full_data)
+            scorer_cd = BIC(cd_data)
+        elif bn_score == "bdeu":
+            scorer_full = BDeu(full_data)
+            scorer_cd = BDeu(cd_data)
+        else:
+            raise ValueError("bn_score must be either 'bic' or 'bdeu'")
+
         hc_full = HillClimbSearch(full_data)
-        model_full = hc_full.estimate(scoring_method=BIC(full_data))
-        score_full = BIC(full_data).score(model_full)
+        model_full = hc_full.estimate(scoring_method=scorer_full)
+        score_full = scorer_full.score(model_full)
 
         hc_cd = HillClimbSearch(cd_data)
-        model_cd = hc_cd.estimate(scoring_method=BIC(cd_data))
-        score_cd = BIC(cd_data).score(model_cd)
+        model_cd = hc_cd.estimate(scoring_method=scorer_cd)
+        score_cd = scorer_cd.score(model_cd)
 
         g_full = Graph.TupleList(model_full.edges(), directed=True)
         g_cd = Graph.TupleList(model_cd.edges(), directed=True)
 
         return IBDNetworkResult(
-            algorithm="hillclimb_bn",
+            algorithm=f"hillclimb_bn_{bn_score}",
             df=df_model,
             df_cd=df_cd,
             full_data=full_data,
@@ -216,7 +230,7 @@ def plot_ibd_network(result, cohort="full", figsize=(8, 8), title=None):
 
     if result.algorithm == "pc_kci":
         g, labels = pc_graph_to_igraph(g_obj)
-    elif result.algorithm == "hillclimb_bn":
+    elif result.algorithm.startswith("hillclimb_bn"):
         if not isinstance(g_obj, Graph):
             raise TypeError("Expected igraph.Graph for BN result")
         g = g_obj
@@ -230,7 +244,7 @@ def plot_ibd_network(result, cohort="full", figsize=(8, 8), title=None):
 
     if title is None:
         cohort_label = "Full Cohort" if cohort == "full" else "Crohn's Disease"
-        if result.algorithm == "hillclimb_bn":
+        if result.algorithm.startswith("hillclimb_bn"):
             title = f"{cohort_label} Bayesian Network"
         elif result.algorithm == "pc_kci":
             title = f"{cohort_label} PC Graph"
@@ -258,7 +272,7 @@ def plot_ibd_network(result, cohort="full", figsize=(8, 8), title=None):
     plt.show()
 
 def plot_centrality_comparison(
-        pc_ntwrk,bn_ntwrk,node_of_interest="CRP",analtype="betweenness",normalized=True,top_n=None
+        pc_ntwrk, bn_ntwrk, node_of_interest="CRP", analtype="betweenness", normalized=True, top_n=None
         ):
     """
     Generate a four-panel comparison of node centrality between PC and BN networks.
@@ -269,14 +283,13 @@ def plot_centrality_comparison(
     fig, axes = plt.subplots(2, 2, figsize=(12, 10))
 
     panels = [
-        ("PC — Full Cohort", pc_ntwrk, "full", axes[0,0]),
-        ("PC — Crohn's Cohort", pc_ntwrk, "cd", axes[0,1]),
-        ("BN — Full Cohort", bn_ntwrk, "full", axes[1,0]),
-        ("BN — Crohn's Cohort", bn_ntwrk, "cd", axes[1,1])
+        ("PC — Full Cohort", pc_ntwrk, "full", axes[0, 0]),
+        ("PC — Crohn's Cohort", pc_ntwrk, "cd", axes[0, 1]),
+        ("BN — Full Cohort", bn_ntwrk, "full", axes[1, 0]),
+        ("BN — Crohn's Cohort", bn_ntwrk, "cd", axes[1, 1])
     ]
 
     for title, result, cohort, ax in panels:
-
         ranked = calculate_betweenness(
             result,
             cohort=cohort,
@@ -285,7 +298,7 @@ def plot_centrality_comparison(
             top_n=top_n
         )
 
-        nodes  = [r[0] for r in ranked]
+        nodes = [r[0] for r in ranked]
         scores = [r[1] for r in ranked]
 
         colors = ['#d62728' if n == node_of_interest else '#1f77b4' for n in nodes]
@@ -309,28 +322,28 @@ def plot_centrality_comparison(
     plt.show()
 
 def plot_centrality(
-        result,cohort="full",node_of_interest="CRP",analtype="betweenness",normalized=True,top_n=None
+        result, cohort="full", node_of_interest="CRP", analtype="betweenness", normalized=True, top_n=None
         ):
     """
     Single Plot
     """
     ranked = calculate_betweenness(
-        result, cohort=cohort, 
+        result, cohort=cohort,
         analtype=analtype,
-        normalized=normalized, 
+        normalized=normalized,
         top_n=top_n
     )
-    nodes  = [r[0] for r in ranked]
+    nodes = [r[0] for r in ranked]
     scores = [r[1] for r in ranked]
     colors = ['#d62728' if n == node_of_interest else '#1f77b4' for n in nodes]
-    
+
     fig, ax = plt.subplots(figsize=(8, 6))
     ax.barh(nodes[::-1], scores[::-1], color=colors[::-1])
-    
+
     xlabel = "Betweenness Centrality" if analtype == "betweenness" else "Node Degree"
     cohort_label = "Full Cohort" if cohort == "full" else "Crohn's Disease"
     title = f"{analtype.capitalize()} Centrality — {cohort_label}"
-    
+
     ax.set_xlabel(xlabel, fontsize=11)
     ax.set_title(title, fontsize=13, fontweight='bold')
     ax.tick_params(axis='y', labelsize=9)
