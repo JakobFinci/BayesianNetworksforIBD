@@ -210,3 +210,4 @@ __marimo__/
 # name it labs_and_biopsies.csv, and DO NOT let it get pushed EVER. I'm cereal >:(
 data/labs_and_biopsies.csv
 data/final_cleaned.csv
+data/cleaned_data_floats.csv
