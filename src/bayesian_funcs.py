@@ -7,6 +7,7 @@ import pandas as pd
 
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
+import matplotlib.gridspec as gridspec
 
 from pgmpy.estimators import HillClimbSearch, BIC, BDeu
 from igraph import Graph, plot
@@ -395,7 +396,7 @@ def compare_hamming_distance(
 
     named_networks = {
         "pc": pc_ntwrk,
-        "bn": bic_ntwrk,
+        "bic": bic_ntwrk,
         "bdeu": bdeu_ntwrk
     }
     named_networks = {k: v for k, v in named_networks.items() if v is not False}
@@ -490,23 +491,64 @@ def compare_hamming_distance(
             "edge_frequency": edge_freq_df
         }
 
-        if plot:
-            plt.figure(figsize=(8, 5))
-            plt.hist(hamming_distances, bins=min(20, max(5, len(set(hamming_distances)))))
-            plt.xlabel("Hamming Distance to Original Graph")
-            plt.ylabel("Bootstrap Count")
-            plt.title(f"{name.upper()} Stability ({result.algorithm}, {cohort})")
-            plt.tight_layout()
-            plt.show()
+    ordered_names = ["pc", "bic", "bdeu"]
+    present = [n for n in ordered_names if n in results]
+    if plot and len(present) > 0:
 
-        if heatmap:
-            plt.figure(figsize=(max(8, len(node_order) * 0.6), max(6, len(node_order) * 0.5)))
-            plt.imshow(edge_freq_df.values, aspect="auto", interpolation="nearest")
-            plt.xticks(range(len(node_order)), node_order, rotation=90)
-            plt.yticks(range(len(node_order)), node_order)
-            plt.colorbar(label="Edge Inclusion Frequency")
-            plt.title(f"{name.upper()} Edge Stability ({cohort})")
-            plt.tight_layout()
-            plt.show()
+        fig, axes = plt.subplots(1, len(present), figsize=(6 * len(present), 5))
 
+        if len(present) == 1:
+            axes = [axes]
+
+        for ax, name in zip(axes, present):
+            distances = results[name]["distances"]
+
+            ax.hist(distances, bins=min(20, max(5, len(set(distances)))))
+            ax.set_title(f"{name.upper()} Stability")
+            ax.set_xlabel("Hamming Distance")
+            ax.set_ylabel("Bootstrap Count")
+
+        plt.tight_layout()
+        plt.show()
+
+
+    if heatmap and len(present) > 0:
+
+        fig = plt.figure(figsize=(8 * len(present) + 3, 8))
+
+        gs = gridspec.GridSpec(
+            1,
+            len(present) + 1,
+            width_ratios=[0.05] + [1] * len(present),
+            wspace=0.8
+        )
+
+        cax = fig.add_subplot(gs[0])
+
+        axes = [fig.add_subplot(gs[i + 1]) for i in range(len(present))]
+
+        im = None
+        for ax, name in zip(axes, present):
+            edge_freq_df = results[name]["edge_frequency"]
+
+            im = ax.imshow(
+                edge_freq_df.values,
+                aspect="auto",
+                interpolation="nearest",
+                vmin=0,
+                vmax=1
+            )
+
+            ax.set_xticks(range(len(edge_freq_df.columns)))
+            ax.set_xticklabels(edge_freq_df.columns, rotation=90)
+
+            ax.set_yticks(range(len(edge_freq_df.index)))
+            ax.set_yticklabels(edge_freq_df.index)
+
+            ax.set_title(f"{name.upper()} Edge Stability", pad=14)
+
+        cb = fig.colorbar(im, cax=cax)
+        cb.set_label("Edge Inclusion Frequency", labelpad=14)
+
+    plt.show()
     return results
