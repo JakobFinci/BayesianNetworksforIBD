@@ -354,3 +354,12 @@ def plot_centrality(
     ax.legend(handles=legend_elements, fontsize=8)
     plt.tight_layout()
     plt.show()
+
+def compare_hamming_distance(
+        pc_ntwrk=False, bn_ntwrk=False, bdeu_ntwrk=False # False if not compared
+        ):
+    networks = [n for n in [pc_ntwrk, bn_ntwrk, bdeu_ntwrk] if n is not False]
+    if len(networks) < 2:
+        raise ValueError("Not much of a comparison if you're only comparing <2 graphs!")
+    for network in networks:
+        pass
