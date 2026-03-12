@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional, Any
+import logging
 
 import numpy as np
 import pandas as pd
@@ -14,6 +15,8 @@ from causallearn.search.ConstraintBased.PC import pc
 from causallearn.utils.cit import kci
 
 from helper_funcs import *
+
+logging.getLogger("pgmpy").setLevel(logging.ERROR)
 
 @dataclass
 class IBDNetworkResult:
@@ -272,7 +275,7 @@ def plot_ibd_network(result, cohort="full", figsize=(8, 8), title=None):
     plt.show()
 
 def plot_centrality_comparison(
-        pc_ntwrk, bic_ntwrk, bdeu_ntwrk, node_of_interest="CRP", analtype="betweenness", normalized=True, top_n=None
+        pc_ntwrk, bic_ntwrk, bdeu_ntwrk, node_of_interest="CRP", analtype="betweenness", top_n=None
         ):
     """
     Generate a six-panel comparison of node centrality between PC and BN networks.
@@ -296,7 +299,6 @@ def plot_centrality_comparison(
             result,
             cohort=cohort,
             analtype=analtype,
-            normalized=normalized,
             top_n=top_n
         )
 
@@ -324,7 +326,7 @@ def plot_centrality_comparison(
     plt.show()
     
 def plot_centrality(
-        result, cohort="full", node_of_interest="CRP", analtype="betweenness", normalized=True, top_n=None
+        result, cohort="full", node_of_interest="CRP", analtype="betweenness", top_n=None
         ):
     """
     Single Plot
@@ -332,7 +334,6 @@ def plot_centrality(
     ranked = calculate_betweenness(
         result, cohort=cohort,
         analtype=analtype,
-        normalized=normalized,
         top_n=top_n
     )
     nodes = [r[0] for r in ranked]

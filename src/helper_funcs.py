@@ -105,7 +105,7 @@ def pc_graph_to_igraph(pc_graph):
     g = Graph.TupleList(edges, directed=True)
     return g, g.vs["name"]
 
-def calculate_betweenness(result, cohort, analtype, normalized, top_n):
+def calculate_betweenness(result, cohort, analtype, top_n):
 
     if cohort not in ["full", "cd"]:
         raise ValueError("cohort must be 'full' or 'cd'")
@@ -116,7 +116,7 @@ def calculate_betweenness(result, cohort, analtype, normalized, top_n):
         g, _ = pc_graph_to_igraph(g)
 
     if analtype == "betweenness":
-        bet = g.betweenness(directed=True, normalized=normalized)
+        bet = g.betweenness(directed=True)
     elif analtype == "degree":
         bet = g.degree(mode="all")
     else:
