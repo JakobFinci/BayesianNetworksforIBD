@@ -272,21 +272,23 @@ def plot_ibd_network(result, cohort="full", figsize=(8, 8), title=None):
     plt.show()
 
 def plot_centrality_comparison(
-        pc_ntwrk, bn_ntwrk, node_of_interest="CRP", analtype="betweenness", normalized=True, top_n=None
+        pc_ntwrk, bic_ntwrk, bdeu_ntwrk, node_of_interest="CRP", analtype="betweenness", normalized=True, top_n=None
         ):
     """
-    Generate a four-panel comparison of node centrality between PC and BN networks.
+    Generate a six-panel comparison of node centrality between PC and BN networks.
 
     Centrality values are computed using `calculate_betweenness()` and visualized
     using horizontal bar plots.
     """
-    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+    fig, axes = plt.subplots(2, 3, figsize=(12, 10))
 
     panels = [
         ("PC — Full Cohort", pc_ntwrk, "full", axes[0, 0]),
-        ("PC — Crohn's Cohort", pc_ntwrk, "cd", axes[0, 1]),
-        ("BN — Full Cohort", bn_ntwrk, "full", axes[1, 0]),
-        ("BN — Crohn's Cohort", bn_ntwrk, "cd", axes[1, 1])
+        ("PC — Crohn's Cohort", pc_ntwrk, "cd", axes[1, 0]),
+        ("BIC — Full Cohort", bic_ntwrk, "full", axes[0, 1]),
+        ("BIC — Crohn's Cohort", bic_ntwrk, "cd", axes[1, 1]),
+        ("Bdeu — Full Cohort", bdeu_ntwrk, "full", axes[0, 2]),
+        ("Bdeu — Crohn's Cohort", bdeu_ntwrk, "cd", axes[1, 2])
     ]
 
     for title, result, cohort, ax in panels:
@@ -320,7 +322,7 @@ def plot_centrality_comparison(
     ax.legend(handles=legend_elements, fontsize=8)
     plt.tight_layout()
     plt.show()
-
+    
 def plot_centrality(
         result, cohort="full", node_of_interest="CRP", analtype="betweenness", normalized=True, top_n=None
         ):
