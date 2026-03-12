@@ -315,13 +315,13 @@ def plot_centrality_comparison(
         ax.set_title(title, fontsize=12, fontweight="bold")
         ax.tick_params(axis="y", labelsize=9)
 
-    fig.suptitle(f"{analtype.capitalize()} Centrality Comparison (PC vs BN)", fontsize=15)
+    fig.suptitle(f"{analtype.capitalize()} Centrality Comparison (PC vs BIC vs Bdeu)", fontsize=15)
 
     legend_elements = [
         Patch(facecolor='#d62728', label=node_of_interest),
         Patch(facecolor='#1f77b4', label='Other nodes')
     ]
-    ax.legend(handles=legend_elements, fontsize=8)
+    ax.legend(handles=legend_elements, fontsize=8,loc='lower left')
     plt.tight_layout()
     plt.show()
     
@@ -354,7 +354,7 @@ def plot_centrality(
         Patch(facecolor='#d62728', label=node_of_interest),
         Patch(facecolor='#1f77b4', label='Other nodes')
     ]
-    ax.legend(handles=legend_elements, fontsize=8)
+    ax.legend(handles=legend_elements, fontsize=8,loc='lower left')
     plt.tight_layout()
     plt.show()
 
