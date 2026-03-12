@@ -321,7 +321,12 @@ def plot_centrality_comparison(
         Patch(facecolor='#d62728', label=node_of_interest),
         Patch(facecolor='#1f77b4', label='Other nodes')
     ]
-    ax.legend(handles=legend_elements, fontsize=8,loc='lower left')
+    fig.legend(
+        handles=legend_elements,
+        fontsize=10,
+        loc="center left",
+        bbox_to_anchor=(1.02, 0.5)
+    )
     plt.tight_layout()
     plt.show()
     
