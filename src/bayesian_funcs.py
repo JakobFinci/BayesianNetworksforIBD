@@ -358,10 +358,154 @@ def plot_centrality(
     plt.show()
 
 def compare_hamming_distance(
-        pc_ntwrk=False, bn_ntwrk=False, bdeu_ntwrk=False # False if not compared
+        pc_ntwrk=False,
+        bic_ntwrk=False,
+        bdeu_ntwrk=False,
+        cohort="full",
+        n_boot=100,
+        random_state=None,
+        plot=True,
+        heatmap=True
         ):
-    networks = [n for n in [pc_ntwrk, bn_ntwrk, bdeu_ntwrk] if n is not False]
-    if len(networks) < 2:
+    """
+    Bootstrap network stability analysis using Hamming distance.
+
+    Parameters
+    ----------
+    pc_ntwrk, bic_ntwrk, bdeu_ntwrk : IBDNetworkResult or False
+        Pre-fit network result objects to analyze. Any argument left as False is ignored.
+    cohort : str
+        "full" or "cd"
+    n_boot : int
+        Number of bootstrap replicates per network.
+    random_state : int or None
+        Seed for reproducibility.
+    plot : bool
+        If True, plot histogram(s) of bootstrap-to-original Hamming distance.
+    heatmap : bool
+        If True, plot edge-frequency heatmap(s).
+
+    Returns
+    -------
+    dict
+        Nested dictionary of bootstrap stability summaries for each supplied network.
+    """
+    rng = np.random.default_rng(random_state)
+
+    named_networks = {
+        "pc": pc_ntwrk,
+        "bn": bic_ntwrk,
+        "bdeu": bdeu_ntwrk
+    }
+    named_networks = {k: v for k, v in named_networks.items() if v is not False}
+
+    if len(named_networks) < 1:
         raise ValueError("Not much of a comparison if you're only comparing <2 graphs!")
-    for network in networks:
-        pass
+
+    if cohort not in ["full", "cd"]:
+        raise ValueError("")
+
+    results = {}
+
+    for name, result in named_networks.items():
+
+        if cohort == "full":
+            fit_df = result.full_data.copy()
+            ref_graph = result.g_full
+        else:
+            fit_df = result.cd_data.copy()
+            ref_graph = result.g_cd
+
+        if fit_df is None or ref_graph is None:
+            raise ValueError(f"Missing data or graph for {name} / cohort={cohort}")
+
+        if isinstance(ref_graph, Graph):
+            node_order = ref_graph.vs["name"]
+        else:
+            try:
+                _, labels = pc_graph_to_igraph(ref_graph)
+                node_order = labels
+            except Exception as e:
+                raise TypeError(
+                    f"Could not extract node names from graph for {name}: {e}"
+                )
+
+        node_to_idx = {node: i for i, node in enumerate(node_order)}
+
+        ref_adj = graph_to_adj(ref_graph, node_order, node_to_idx)
+
+        hamming_distances = []
+        edge_counts = np.zeros_like(ref_adj, dtype=int)
+
+        for _ in range(n_boot):
+            sample_idx = rng.choice(fit_df.index, size=len(fit_df), replace=True)
+            boot_df = fit_df.loc[sample_idx].reset_index(drop=True)
+
+            # hard-coded rebuild logic matched to current codebase
+            if result.algorithm == "pc_kci":
+                boot_model = pc(
+                    boot_df.to_numpy(),
+                    alpha=0.05,
+                    indep_test=kci,
+                    show_progress=False,
+                    node_names=list(boot_df.columns)
+                )
+                boot_graph = boot_model.G
+
+            elif result.algorithm == "hillclimb_bn_bic":
+                scorer = BIC(boot_df)
+                hc = HillClimbSearch(boot_df)
+                boot_model = hc.estimate(scoring_method=scorer, show_progress=False)
+                boot_graph = Graph.TupleList(boot_model.edges(), directed=True)
+
+            elif result.algorithm == "hillclimb_bn_bdeu":
+                scorer = BDeu(boot_df)
+                hc = HillClimbSearch(boot_df)
+                boot_model = hc.estimate(scoring_method=scorer,show_progress=False)
+                boot_graph = Graph.TupleList(boot_model.edges(), directed=True)
+
+            else:
+                raise ValueError(f"Unsupported algorithm: {result.algorithm}")
+
+            boot_adj = graph_to_adj(boot_graph, node_order, node_to_idx)
+            edge_counts += boot_adj
+
+            d = int(np.sum(ref_adj != boot_adj))
+            hamming_distances.append(d)
+
+        edge_freq = edge_counts / n_boot
+        edge_freq_df = pd.DataFrame(edge_freq, index=node_order, columns=node_order)
+
+        results[name] = {
+            "algorithm": result.algorithm,
+            "cohort": cohort,
+            "n_boot": n_boot,
+            "distances": hamming_distances,
+            "mean_hamming": float(np.mean(hamming_distances)),
+            "std_hamming": float(np.std(hamming_distances)),
+            "median_hamming": float(np.median(hamming_distances)),
+            "min_hamming": int(np.min(hamming_distances)),
+            "max_hamming": int(np.max(hamming_distances)),
+            "edge_frequency": edge_freq_df
+        }
+
+        if plot:
+            plt.figure(figsize=(8, 5))
+            plt.hist(hamming_distances, bins=min(20, max(5, len(set(hamming_distances)))))
+            plt.xlabel("Hamming Distance to Original Graph")
+            plt.ylabel("Bootstrap Count")
+            plt.title(f"{name.upper()} Stability ({result.algorithm}, {cohort})")
+            plt.tight_layout()
+            plt.show()
+
+        if heatmap:
+            plt.figure(figsize=(max(8, len(node_order) * 0.6), max(6, len(node_order) * 0.5)))
+            plt.imshow(edge_freq_df.values, aspect="auto", interpolation="nearest")
+            plt.xticks(range(len(node_order)), node_order, rotation=90)
+            plt.yticks(range(len(node_order)), node_order)
+            plt.colorbar(label="Edge Inclusion Frequency")
+            plt.title(f"{name.upper()} Edge Stability ({cohort})")
+            plt.tight_layout()
+            plt.show()
+
+    return results

@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from igraph import Graph
 
 from sklearn.experimental import enable_iterative_imputer
@@ -131,3 +132,25 @@ def calculate_betweenness(result, cohort, analtype, normalized, top_n):
         ranked = ranked[:top_n]
 
     return ranked
+
+def graph_to_adj(g_obj, node_order, node_to_idx):
+            A = np.zeros((len(node_order), len(node_order)), dtype=int)
+
+            if isinstance(g_obj, Graph):
+                edges = g_obj.get_edgelist()
+                names = g_obj.vs["name"]
+                for u_idx, v_idx in edges:
+                    u = names[u_idx]
+                    v = names[v_idx]
+                    if u in node_to_idx and v in node_to_idx:
+                        A[node_to_idx[u], node_to_idx[v]] = 1
+            else:
+                g_ig, labels = pc_graph_to_igraph(g_obj)
+                edges = g_ig.get_edgelist()
+                for u_idx, v_idx in edges:
+                    u = labels[u_idx]
+                    v = labels[v_idx]
+                    if u in node_to_idx and v in node_to_idx:
+                        A[node_to_idx[u], node_to_idx[v]] = 1
+
+            return A
