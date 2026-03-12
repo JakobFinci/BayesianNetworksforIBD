@@ -133,11 +133,11 @@ def generate_ibd_network(
             raise ValueError("bn_score must be either 'bic' or 'bdeu'")
 
         hc_full = HillClimbSearch(full_data)
-        model_full = hc_full.estimate(scoring_method=scorer_full)
+        model_full = hc_full.estimate(scoring_method=scorer_full, show_progress=False)
         score_full = scorer_full.score(model_full)
 
         hc_cd = HillClimbSearch(cd_data)
-        model_cd = hc_cd.estimate(scoring_method=scorer_cd)
+        model_cd = hc_cd.estimate(scoring_method=scorer_cd, show_progress=False)
         score_cd = scorer_cd.score(model_cd)
 
         g_full = Graph.TupleList(model_full.edges(), directed=True)
