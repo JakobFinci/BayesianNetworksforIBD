@@ -208,7 +208,7 @@ def generate_ibd_network(
     else:
         raise ValueError("method must be either 'bn' or 'pc'")
 
-def plot_ibd_network(result, cohort="full", figsize=(8, 8), title=None):
+def plot_ibd_network(result, cohort="full", figsize=(8, 8), title=None, ax=None):
     """
     Plot a network stored in an IBDNetworkResult.
 
@@ -222,6 +222,8 @@ def plot_ibd_network(result, cohort="full", figsize=(8, 8), title=None):
         Matplotlib figure size.
     title : str or None
         Optional custom title.
+    ax : matplotlib.axes.Axes or None
+        Existing axis to draw on. If None, creates a new figure.
     """
 
     if cohort not in ["full", "cd"]:
@@ -255,7 +257,10 @@ def plot_ibd_network(result, cohort="full", figsize=(8, 8), title=None):
         else:
             title = f"{cohort_label} Network"
 
-    fig, ax = plt.subplots(figsize=figsize)
+    created_fig = False
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
+        created_fig = True
 
     layout = g.layout("fr")
 
@@ -263,6 +268,8 @@ def plot_ibd_network(result, cohort="full", figsize=(8, 8), title=None):
         g,
         target=ax,
         layout=layout,
+        bbox=(ax.bbox.width, ax.bbox.height),
+        margin=40,
         vertex_size=22,
         vertex_label=labels,
         vertex_label_size=10,
@@ -273,7 +280,10 @@ def plot_ibd_network(result, cohort="full", figsize=(8, 8), title=None):
     )
 
     ax.set_title(title)
-    plt.show()
+    ax.set_axis_off()
+
+    if created_fig:
+        plt.show()
 
 def plot_centrality_comparison(
         pc_ntwrk, bic_ntwrk, bdeu_ntwrk, node_of_interest="CRP", analtype="betweenness", top_n=None
@@ -410,7 +420,7 @@ def compare_hamming_distance(
         raise ValueError("Not much of a comparison if you're only comparing <2 graphs!")
 
     if cohort not in ["full", "cd"]:
-        raise ValueError("")
+        raise ValueError("CD means Crohn's Disease, not Cream Donut. You don't get to invent new cohorts.")
 
     results = {}
 
@@ -557,3 +567,61 @@ def compare_hamming_distance(
 
     plt.show()
     return results
+
+def panelled_plots(
+        pc_ntwrk,
+        bic_ntwrk,
+        bdeu_ntwrk,
+        stratify_by,
+        cohort="full",
+        graph_type="pc"
+        ):
+    """
+    Create panelled plots of IBD networks.
+
+    Parameters
+    ----------
+    pc_ntwrk, bic_ntwrk, bdeu_ntwrk : IBDNetworkResult
+        Network result objects.
+    stratify_by : str
+        Either "graph" or "diagnosis".
+    cohort : str
+        "full" or "cd". Only used when stratify_by="graph".
+    graph_type : str
+        Which graph type to use when stratify_by="diagnosis".
+        One of: "pc", "bic", "bdeu".
+    """
+
+    if stratify_by not in ["diagnosis", "graph"]:
+        raise ValueError('"Come on, man!" - Joe Biden, 2020 I think')
+
+    if cohort not in ["full", "cd"]:
+        raise ValueError('"It eez not in zee cards" - The Fortune Teller Machine from Archie McPhee, Seattle, WA')
+
+    if graph_type not in ["pc", "bic", "bdeu"]:
+        raise ValueError('"bf	5f	c4	b0	65	1a	d9	0a	47	8f	45	3d	56	28	e8	1e  ' \
+        '93	b2	ae	e5	ce	c5	de	00	48	0d	a7	15	6e	92	da	58"')
+
+    if stratify_by == "graph":
+        fig, axs = plt.subplots(1, 3, figsize=(20, 7), layout="constrained")
+
+        plot_ibd_network(pc_ntwrk, cohort=cohort, title=f"PC ({cohort.upper()})", ax=axs[0])
+        plot_ibd_network(bic_ntwrk, cohort=cohort, title=f"BIC ({cohort.upper()})", ax=axs[1])
+        plot_ibd_network(bdeu_ntwrk, cohort=cohort, title=f"BDeu ({cohort.upper()})", ax=axs[2])
+
+    else:  # stratify_by == "diagnosis"
+
+        graph_map = {
+            "pc": (pc_ntwrk, "PC"),
+            "bic": (bic_ntwrk, "BIC"),
+            "bdeu": (bdeu_ntwrk, "BDeu")
+        }
+
+        ntwrk, label = graph_map[graph_type]
+
+        fig, axs = plt.subplots(1, 2, figsize=(14, 7), layout="constrained")
+
+        plot_ibd_network(ntwrk, cohort="full", title=f"{label} (FULL)", ax=axs[0])
+        plot_ibd_network(ntwrk, cohort="cd", title=f"{label} (CD)", ax=axs[1])
+
+    plt.show()
