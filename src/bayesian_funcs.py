@@ -605,9 +605,9 @@ def panelled_plots(
     if stratify_by == "graph":
         fig, axs = plt.subplots(1, 3, figsize=(20, 7), layout="constrained")
 
-        plot_ibd_network(pc_ntwrk, cohort=cohort, title=f"PC ({cohort.upper()})", ax=axs[0])
-        plot_ibd_network(bic_ntwrk, cohort=cohort, title=f"BIC ({cohort.upper()})", ax=axs[1])
-        plot_ibd_network(bdeu_ntwrk, cohort=cohort, title=f"BDeu ({cohort.upper()})", ax=axs[2])
+        plot_ibd_network(pc_ntwrk, cohort=cohort, title=f"PC ({cohort.capitalize() if cohort == 'full' else cohort.upper()})", ax=axs[0])
+        plot_ibd_network(bic_ntwrk, cohort=cohort, title=f"BIC ({cohort.capitalize() if cohort == 'full' else cohort.upper()})", ax=axs[1])
+        plot_ibd_network(bdeu_ntwrk, cohort=cohort, title=f"BDeu ({cohort.capitalize() if cohort == 'full' else cohort.upper()})", ax=axs[2])
 
     else:  # stratify_by == "diagnosis"
 
@@ -621,7 +621,7 @@ def panelled_plots(
 
         fig, axs = plt.subplots(1, 2, figsize=(14, 7), layout="constrained")
 
-        plot_ibd_network(ntwrk, cohort="full", title=f"{label} (FULL)", ax=axs[0])
+        plot_ibd_network(ntwrk, cohort="full", title=f"{label} (Full)", ax=axs[0])
         plot_ibd_network(ntwrk, cohort="cd", title=f"{label} (CD)", ax=axs[1])
 
     plt.show()
