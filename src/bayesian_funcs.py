@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional, Any
 import logging
+import random
 
 import numpy as np
 import pandas as pd
@@ -74,7 +75,7 @@ def generate_ibd_network(
     """
 
     df = pd.read_csv(csv_path)
-
+   
     categorical_cols = [
         "Duo_Inflammation",
         "Gastric_Inflammation",
@@ -607,14 +608,14 @@ def panelled_plots(
 
         plot_ibd_network(pc_ntwrk, cohort=cohort, title=f"PC ({cohort.capitalize() if cohort == 'full' else cohort.upper()})", ax=axs[0])
         plot_ibd_network(bic_ntwrk, cohort=cohort, title=f"BIC ({cohort.capitalize() if cohort == 'full' else cohort.upper()})", ax=axs[1])
-        plot_ibd_network(bdeu_ntwrk, cohort=cohort, title=f"BDeu ({cohort.capitalize() if cohort == 'full' else cohort.upper()})", ax=axs[2])
+        plot_ibd_network(bdeu_ntwrk, cohort=cohort, title=f"Bdeu ({cohort.capitalize() if cohort == 'full' else cohort.upper()})", ax=axs[2])
 
     else:  # stratify_by == "diagnosis"
 
         graph_map = {
             "pc": (pc_ntwrk, "PC"),
             "bic": (bic_ntwrk, "BIC"),
-            "bdeu": (bdeu_ntwrk, "BDeu")
+            "bdeu": (bdeu_ntwrk, "Bdeu")
         }
 
         ntwrk, label = graph_map[graph_type]
