@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional, Any
 import logging
-import random
 
 import numpy as np
 import pandas as pd
@@ -135,7 +134,7 @@ def generate_ibd_network(
 
         hc_full = HillClimbSearch(full_data)
         model_full = hc_full.estimate(scoring_method=scorer_full, show_progress=False)
-        score_full = scorer_full.score(model_full)
+        score_fulplyancel = scorer_full.score(model_full)
 
         hc_cd = HillClimbSearch(cd_data)
         model_cd = hc_cd.estimate(scoring_method=scorer_cd, show_progress=False)
@@ -341,39 +340,6 @@ def plot_centrality_comparison(
     )
     plt.tight_layout()
     plt.show()
-    
-# def plot_centrality(
-#         result, cohort="full", node_of_interest="CRP", analtype="betweenness", top_n=None
-#         ):
-#     """
-#     Single Plot
-#     """
-#     ranked = calculate_betweenness(
-#         result, cohort=cohort,
-#         analtype=analtype,
-#         top_n=top_n
-#     )
-#     nodes = [r[0] for r in ranked]
-#     scores = [r[1] for r in ranked]
-#     colors = ['#d62728' if n == node_of_interest else '#1f77b4' for n in nodes]
-
-#     fig, ax = plt.subplots(figsize=(8, 6))
-#     ax.barh(nodes[::-1], scores[::-1], color=colors[::-1])
-
-#     xlabel = "Betweenness Centrality" if analtype == "betweenness" else "Node Degree"
-#     cohort_label = "Full Cohort" if cohort == "full" else "Crohn's Disease"
-#     title = f"{analtype.capitalize()} Centrality — {cohort_label}"
-
-#     ax.set_xlabel(xlabel, fontsize=11)
-#     ax.set_title(title, fontsize=13, fontweight='bold')
-#     ax.tick_params(axis='y', labelsize=9)
-#     legend_elements = [
-#         Patch(facecolor='#d62728', label=node_of_interest),
-#         Patch(facecolor='#1f77b4', label='Other nodes')
-#     ]
-#     ax.legend(handles=legend_elements, fontsize=8,loc='lower left')
-#     plt.tight_layout()
-#     plt.show()
 
 def compare_hamming_distance(
         pc_ntwrk=False,
@@ -626,3 +592,36 @@ def panelled_plots(
         plot_ibd_network(ntwrk, cohort="cd", title=f"{label} (CD)", ax=axs[1])
 
     plt.show()
+
+# def plot_centrality(
+#         result, cohort="full", node_of_interest="CRP", analtype="betweenness", top_n=None
+#         ):
+#     """
+#     Single Plot
+#     """
+#     ranked = calculate_betweenness(
+#         result, cohort=cohort,
+#         analtype=analtype,
+#         top_n=top_n
+#     )
+#     nodes = [r[0] for r in ranked]
+#     scores = [r[1] for r in ranked]
+#     colors = ['#d62728' if n == node_of_interest else '#1f77b4' for n in nodes]
+
+#     fig, ax = plt.subplots(figsize=(8, 6))
+#     ax.barh(nodes[::-1], scores[::-1], color=colors[::-1])
+
+#     xlabel = "Betweenness Centrality" if analtype == "betweenness" else "Node Degree"
+#     cohort_label = "Full Cohort" if cohort == "full" else "Crohn's Disease"
+#     title = f"{analtype.capitalize()} Centrality — {cohort_label}"
+
+#     ax.set_xlabel(xlabel, fontsize=11)
+#     ax.set_title(title, fontsize=13, fontweight='bold')
+#     ax.tick_params(axis='y', labelsize=9)
+#     legend_elements = [
+#         Patch(facecolor='#d62728', label=node_of_interest),
+#         Patch(facecolor='#1f77b4', label='Other nodes')
+#     ]
+#     ax.legend(handles=legend_elements, fontsize=8,loc='lower left')
+#     plt.tight_layout()
+#     plt.show()
